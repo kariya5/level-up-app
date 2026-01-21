@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Level Up App</title>
+    <script src="auth.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --primary-color: #1b263b;
+            --text-color: #0d1b2a;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        .login-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 1.2rem;
+            text-align: center;
+            width: 150px;
+            margin: 1rem 0;
+            letter-spacing: 0.2rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card">
+        <h2>PASSCODE</h2>
+        <input type="password" id="passcode" maxlength="4" placeholder="••••">
+        <br>
+        <button onclick="login()">ENTER</button>
+    </div>
+
+    <script>
+        function login() {
+            const input = document.getElementById('passcode').value;
+            if (input === '0000') {
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.href = 'index.html';
+            } else {
+                alert('Invalid Passcode');
+                document.getElementById('passcode').value = '';
+            }
+        }
+    </script>
+</body>
+
+</html>

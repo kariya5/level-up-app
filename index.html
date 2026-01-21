@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="auth.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Up App</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --primary-color: #1b263b;
+            --secondary-color: #415a77;
+            --accent-color: #778da9;
+            --text-color: #0d1b2a;
+            --card-bg: #ffffff;
+            --border-color: #e0e1dd;
+            --success-color: #4caf50;
+            --routine-bg: #f0f4f8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .level-badge {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-top: 0.5rem;
+        }
+
+        /* Chart Area */
+        .chart-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto;
+        }
+
+        svg {
+            transform: rotate(-90deg);
+        }
+
+        circle {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+        }
+
+        .circle-bg {
+            stroke: var(--border-color);
+        }
+
+        .circle-progress {
+            stroke: var(--primary-color);
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .chart-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .chart-text .percentage {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .chart-text .label {
+            font-size: 0.75rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Routine Area */
+        .routine-section {
+            background: var(--routine-bg);
+            padding: 1rem;
+            border-radius: 12px;
+        }
+
+        .routine-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .routine-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+            padding: 0.6rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .routine-item.completed {
+            background: #e8f5e9;
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .routine-item input {
+            cursor: pointer;
+        }
+
+        /* Task Area */
+        .task-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button.add-btn {
+            padding: 0.6rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .task-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem;
+            background: #fdfdfd;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.4rem;
+        }
+
+        .task-content {
+            font-size: 0.9rem;
+        }
+
+        button.complete-btn {
+            background: none;
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        button.complete-btn:hover {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .task-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .task-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .nav-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-button {
+            flex: 1;
+            padding: 0.8rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--secondary-color);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-button:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="nav-group">
+            <button class="nav-button" onclick="window.location.href='budget.html'">家計簿</button>
+            <button class="nav-button" onclick="window.location.href='goals.html'">目標</button>
+            <button class="nav-button" onclick="window.location.href='memo.html'">メモ</button>
+            <button class="nav-button" onclick="window.location.href='delivery.html'">デリバリー</button>
+        </div>
+        <div class="header">
+            <h1>Level Up</h1>
+            <div id="levelDisplay" class="level-badge">1</div>
+        </div>
+
+        <div class="chart-container">
+            <svg width="180" height="180">
+                <circle class="circle-bg" cx="90" cy="90" r="75"></circle>
+                <circle id="progressBar" class="circle-progress" cx="90" cy="90" r="75" stroke-dasharray="471"
+                    stroke-dashoffset="471"></circle>
+            </svg>
+            <div class="chart-text">
+                <div id="percentageDisplay" class="percentage">0%</div>
+                <div class="label">EXP</div>
+            </div>
+        </div>
+
+        <div class="routine-section">
+            <h2 class="section-title">今日のルーチン</h2>
+            <div id="routineList" class="routine-list">
+                <!-- Routines will be generated here -->
+            </div>
+        </div>
+
+        <div class="task-section">
+            <h2 class="section-title">自由タスク</h2>
+            <div class="input-group">
+                <input type="text" id="taskInput" placeholder="新しいToDo..." onkeypress="handleKeyPress(event)">
+                <button class="add-btn" onclick="addTask()">追加</button>
+            </div>
+            <ul id="taskList" class="task-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const FIXED_ROUTINES = [
+            { id: 'uber', name: 'Uber (配達作業)' },
+            { id: 'abstinence', name: '禁欲' },
+            { id: 'cooking', name: '自炊' },
+            { id: 'walking', name: '朝の散歩' }
+        ];
+
+        let state = {
+            level: 1,
+            exp: 0,
+            tasks: [],
+            routines: {
+                uber: false,
+                abstinence: false,
+                cooking: false,
+                walking: false
+            },
+            lastResetDate: null
+        };
+
+        const EXP_PER_TASK = 5;
+        const EXP_TO_LEVEL_UP = 100;
+        const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * 75;
+
+        const levelDisplay = document.getElementById('levelDisplay');
+        const progressBar = document.getElementById('progressBar');
+        const percentageDisplay = document.getElementById('percentageDisplay');
+        const routineList = document.getElementById('routineList');
+        const taskInput = document.getElementById('taskInput');
+        const taskList = document.getElementById('taskList');
+
+        function init() {
+            const savedState = localStorage.getItem('levelUpState_v2');
+            if (savedState) {
+                state = JSON.parse(savedState);
+            }
+            checkDailyReset();
+            render();
+        }
+
+        function checkDailyReset() {
+            const today = new Date().toLocaleDateString();
+            if (state.lastResetDate !== today) {
+                // Reset daily routines
+                for (let key in state.routines) {
+                    state.routines[key] = false;
+                }
+                state.lastResetDate = today;
+                save();
+            }
+        }
+
+        function save() {
+            localStorage.setItem('levelUpState_v2', JSON.stringify(state));
+        }
+
+        function addExp(amount) {
+            state.exp += amount;
+            while (state.exp >= EXP_TO_LEVEL_UP) {
+                state.level += 1;
+                state.exp -= EXP_TO_LEVEL_UP;
+            }
+            save();
+            render();
+        }
+
+        function toggleRoutine(id) {
+            if (!state.routines[id]) {
+                state.routines[id] = true;
+                addExp(EXP_PER_TASK);
+            } else {
+                // Optionally allow unchecking but don't deduct EXP to keep it simple
+                // or just prevent unchecking if you want it to be "completed"
+                state.routines[id] = false;
+                // We won't deduct EXP here for simplicity, but in a real app you might.
+                save();
+                render();
+            }
+        }
+
+        function render() {
+            levelDisplay.textContent = state.level;
+            const percentage = (state.exp / EXP_TO_LEVEL_UP) * 100;
+            percentageDisplay.textContent = `${Math.floor(percentage)}%`;
+            const offset = CIRCLE_CIRCUMFERENCE - (percentage / 100) * CIRCLE_CIRCUMFERENCE;
+            progressBar.style.strokeDashoffset = offset;
+
+            // Render Routines
+            routineList.innerHTML = '';
+            FIXED_ROUTINES.forEach(r => {
+                const isDone = state.routines[r.id];
+                const div = document.createElement('div');
+                div.className = `routine-item ${isDone ? 'completed' : ''}`;
+                div.onclick = () => toggleRoutine(r.id);
+                div.innerHTML = `
+                    <input type="checkbox" ${isDone ? 'checked' : ''} onclick="event.stopPropagation(); toggleRoutine('${r.id}')">
+                    <span>${r.name}</span>
+                `;
+                routineList.appendChild(div);
+            });
+
+            // Render Tasks
+            taskList.innerHTML = '';
+            state.tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+                li.innerHTML = `
+                    <span class="task-content">${task}</span>
+                    <button class="complete-btn" onclick="completeTask(${index})">完了</button>
+                `;
+                taskList.appendChild(li);
+            });
+        }
+
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (text) {
+                state.tasks.push(text);
+                taskInput.value = '';
+                save();
+                render();
+            }
+        }
+
+        function handleKeyPress(e) { if (e.key === 'Enter') addTask(); }
+
+        function completeTask(index) {
+            state.tasks.splice(index, 1);
+            addExp(EXP_PER_TASK);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

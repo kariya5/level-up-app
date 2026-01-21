@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="auth.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デリバリー記録 - Level Up App</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --primary-color: #1b263b;
+            --secondary-color: #415a77;
+            --accent-color: #778da9;
+            --text-color: #0d1b2a;
+            --card-bg: #ffffff;
+            --border-color: #e0e1dd;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #ef5350;
+            --input-bg: #f1f3f5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            position: relative;
+            height: 90vh;
+            /* Mobile friendly full height feel */
+            max-height: 800px;
+        }
+
+        .nav-back {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+            padding: 0.5rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.1rem;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Status & Timer */
+        .status-bar {
+            background: var(--input-bg);
+            padding: 0.8rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ccc;
+        }
+
+        .status-dot.active {
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+
+        /* Dashboard Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .stat-card {
+            background: #fdfdfd;
+            border: 1px solid var(--border-color);
+            padding: 0.8rem;
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--accent-color);
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .stat-value.total {
+            color: var(--success-color);
+            font-size: 1.5rem;
+        }
+
+        /* Large Action Button */
+        .action-area {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .delivery-btn {
+            width: 100%;
+            padding: 2rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(27, 38, 59, 0.3);
+            transition: transform 0.1s, background 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .delivery-btn.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .delivery-btn:active {
+            transform: scale(0.98);
+        }
+
+        .delivery-btn span {
+            font-size: 0.9rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Control Buttons */
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .ctrl-btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-start {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-stop {
+            background-color: var(--danger-color);
+            color: white;
+            display: none;
+        }
+
+        /* List Area */
+        .list-section {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-header {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3rem;
+        }
+
+        .delivery-list {
+            list-style: none;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+        }
+
+        .delivery-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            border-bottom: 1px solid var(--border-color);
+            background: #fff;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .item-time {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+        }
+
+        .item-amount {
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            /* Bottom sheet on mobile */
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.open {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .amount-input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid var(--primary-color);
+            border-radius: 12px;
+            outline: none;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-confirm {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-cancel {
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        @media (min-width: 500px) {
+            .modal-overlay {
+                align-items: center;
+            }
+
+            .modal-content {
+                border-radius: 16px;
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <a class="nav-back" onclick="window.location.href='index.html'">← 戻る</a>
+
+        <div class="header">
+            <h1>Delivery Record</h1>
+        </div>
+
+        <!-- Status & Timer -->
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div id="statusDot" class="status-dot"></div>
+                <span id="statusText">未稼働</span>
+            </div>
+            <div id="timerDisplay">00:00:00</div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <div class="stat-card">
+                <div class="stat-label">総売上</div>
+                <div id="totalSales" class="stat-value total">¥0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">件数</div>
+                <div id="totalCount" class="stat-value">0件</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">平均単価</div>
+                <div id="avgPrice" class="stat-value">¥0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">推定時給</div>
+                <div id="hourlyWage" class="stat-value">¥0</div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-area">
+            <button id="deliveryBtn" class="delivery-btn" onclick="openModal()">
+                配達完了 (+1)
+                <span>金額を入力</span>
+            </button>
+            <div class="controls">
+                <button id="startBtn" class="ctrl-btn btn-start" onclick="startWork()">稼働開始</button>
+                <button id="stopBtn" class="ctrl-btn btn-stop" onclick="stopWork()">業務終了 & 保存</button>
+            </div>
+        </div>
+
+        <!-- Session List -->
+        <div class="list-section">
+            <div class="list-header">今回の配達リスト</div>
+            <ul id="sessionList" class="delivery-list">
+                <!-- Items will go here -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Input Modal -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">報酬額を入力</div>
+            <input type="number" id="amountInput" class="amount-input" placeholder="0" inputmode="numeric">
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">キャンセル</button>
+                <button class="modal-btn btn-confirm" onclick="submitDelivery()">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            isWorking: false,
+            startTime: null,
+            endTime: null,
+            items: [], // { amount: number, timestamp: number }
+            history: [] // persistant history
+        };
+
+        let timerInterval;
+
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const deliveryBtn = document.getElementById('deliveryBtn');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        const totalSalesEl = document.getElementById('totalSales');
+        const totalCountEl = document.getElementById('totalCount');
+        const avgPriceEl = document.getElementById('avgPrice');
+        const hourlyWageEl = document.getElementById('hourlyWage');
+        const sessionListEl = document.getElementById('sessionList');
+
+        const modalOverlay = document.getElementById('modalOverlay');
+        const amountInput = document.getElementById('amountInput');
+
+        function init() {
+            const savedState = localStorage.getItem('deliveryState');
+            if (savedState) {
+                const parsed = JSON.parse(savedState);
+                state.history = parsed.history || [];
+
+                // Recover active session if exists
+                if (parsed.isWorking) {
+                    state.isWorking = true;
+                    state.startTime = parsed.startTime;
+                    state.items = parsed.items || [];
+                    startTimer();
+                }
+            }
+            render();
+        }
+
+        function save() {
+            localStorage.setItem('deliveryState', JSON.stringify({
+                isWorking: state.isWorking,
+                startTime: state.startTime,
+                items: state.items,
+                history: state.history
+            }));
+        }
+
+        function startWork() {
+            if (state.isWorking) return;
+            state.isWorking = true;
+            state.startTime = Date.now();
+            state.items = [];
+
+            save();
+            render();
+            startTimer();
+        }
+
+        function stopWork() {
+            if (!state.isWorking) return;
+
+            if (confirm('業務を終了してログを保存しますか？')) {
+                const endTime = Date.now();
+                const sessionLog = {
+                    date: new Date(state.startTime).toLocaleString(),
+                    start: state.startTime,
+                    end: endTime,
+                    items: [...state.items],
+                    total: calculateTotal(),
+                    count: state.items.length
+                };
+
+                state.history.unshift(sessionLog);
+                state.isWorking = false;
+                state.startTime = null;
+                state.items = [];
+
+                stopTimer();
+                save();
+                render();
+                alert('ログを保存しました。お疲れ様でした！');
+            }
+        }
+
+        function startTimer() {
+            stopTimer();
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerDisplay.textContent = "00:00:00";
+        }
+
+        function updateTimer() {
+            if (!state.isWorking || !state.startTime) return;
+            const diff = Date.now() - state.startTime;
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            timerDisplay.textContent =
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            // Update hourly wage real-time
+            renderDocs();
+        }
+
+        function openModal() {
+            modalOverlay.classList.add('open');
+            amountInput.value = '';
+            setTimeout(() => amountInput.focus(), 100);
+        }
+
+        function closeModal(e) {
+            if (e && e.target !== modalOverlay && e.target.tagName !== 'BUTTON') return;
+            modalOverlay.classList.remove('open');
+        }
+
+        function submitDelivery() {
+            const amount = parseInt(amountInput.value);
+            if (!amount || amount <= 0) {
+                alert('正しい金額を入力してください');
+                return;
+            }
+
+            state.items.push({
+                amount: amount,
+                timestamp: Date.now()
+            });
+
+            closeModal();
+            save();
+            render();
+        }
+
+        function calculateTotal() {
+            return state.items.reduce((sum, item) => sum + item.amount, 0);
+        }
+
+        function renderDocs() {
+            const total = calculateTotal();
+            const count = state.items.length;
+            const avg = count > 0 ? Math.floor(total / count) : 0;
+
+            totalSalesEl.textContent = `¥${total.toLocaleString()}`;
+            totalCountEl.textContent = `${count}件`;
+            avgPriceEl.textContent = `¥${avg.toLocaleString()}`;
+
+            // Hourly wage calc
+            if (state.isWorking && state.startTime) {
+                const durationHours = (Date.now() - state.startTime) / 3600000;
+                // Avoid infinity or huge numbers at start
+                const wage = durationHours > 0.01 ? Math.floor(total / durationHours) : 0;
+                hourlyWageEl.textContent = `¥${wage.toLocaleString()}`;
+            } else {
+                hourlyWageEl.textContent = `¥0`;
+            }
+        }
+
+        function render() {
+            // UI State
+            if (state.isWorking) {
+                statusDot.classList.add('active');
+                statusText.textContent = "稼働中";
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                deliveryBtn.classList.add('active');
+            } else {
+                statusDot.classList.remove('active');
+                statusText.textContent = "未稼働";
+                startBtn.style.display = 'block';
+                stopBtn.style.display = 'none';
+                deliveryBtn.classList.remove('active');
+                timerDisplay.textContent = "00:00:00";
+            }
+
+            // Stats
+            renderDocs();
+
+            // List
+            sessionListEl.innerHTML = '';
+            // Show recent on top
+            const reversedItems = [...state.items].reverse();
+            reversedItems.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'delivery-item';
+                const date = new Date(item.timestamp);
+                const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+                li.innerHTML = `
+                    <span class="item-time">#${state.items.length - index} - ${timeStr}</span>
+                    <span class="item-amount">¥${item.amount.toLocaleString()}</span>
+                `;
+                sessionListEl.appendChild(li);
+            });
+        }
+
+        // Enter key in input
+        amountInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                submitDelivery();
+            }
+        });
+
+        init();
+    </script>
+</body>
+
+</html>

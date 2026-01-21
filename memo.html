@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="auth.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メモ - Level Up App</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --primary-color: #1b263b;
+            --secondary-color: #415a77;
+            --accent-color: #778da9;
+            --text-color: #0d1b2a;
+            --card-bg: #ffffff;
+            --border-color: #e0e1dd;
+            --delete-color: #e63946;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: relative;
+            margin-top: 2rem;
+        }
+
+        .nav-back {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .header {
+            text-align: center;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        button.add-btn {
+            padding: 0.6rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            align-self: flex-end;
+        }
+
+        button.add-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .memo-list {
+            display: grid;
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .memo-item {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .memo-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .memo-content {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .memo-date {
+            font-size: 0.75rem;
+            color: var(--accent-color);
+            display: block;
+            text-align: right;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            color: #ddd;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.2rem;
+            transition: color 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: var(--delete-color);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 1.5rem;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <a class="nav-back" onclick="window.location.href='index.html'">← 戻る</a>
+
+        <div class="header">
+            <h1>MEMO</h1>
+        </div>
+
+        <div class="input-group">
+            <textarea id="memoInput" placeholder="新しいメモを入力..."></textarea>
+            <button class="add-btn" onclick="addMemo()">保存</button>
+        </div>
+
+        <div id="memoList" class="memo-list"></div>
+    </div>
+
+    <script>
+        let state = {
+            memos: [] // { id, text, date }
+        };
+
+        const memoInput = document.getElementById('memoInput');
+        const memoList = document.getElementById('memoList');
+
+        function init() {
+            const savedState = localStorage.getItem('memoState');
+            if (savedState) {
+                state = JSON.parse(savedState);
+            } else {
+                // Default Hello World
+                addMemoInternal("Hello World", true);
+            }
+            render();
+        }
+
+        function save() {
+            localStorage.setItem('memoState', JSON.stringify(state));
+        }
+
+        function addMemoInternal(text, skipSave = false) {
+            state.memos.unshift({
+                id: Date.now() + Math.random(),
+                text: text,
+                date: new Date().toLocaleString()
+            });
+            if (!skipSave) save();
+        }
+
+        function addMemo() {
+            const text = memoInput.value.trim();
+            if (text) {
+                addMemoInternal(text);
+                memoInput.value = '';
+                render();
+            }
+        }
+
+        function deleteMemo(id) {
+            state.memos = state.memos.filter(m => m.id !== id);
+            save();
+            render();
+        }
+
+        function render() {
+            memoList.innerHTML = '';
+            state.memos.forEach(memo => {
+                const div = document.createElement('div');
+                div.className = 'memo-item';
+                div.innerHTML = `
+                    <button class="delete-btn" onclick="deleteMemo(${memo.id})">×</button>
+                    <div class="memo-content">${memo.text}</div>
+                    <span class="memo-date">${memo.date}</span>
+                `;
+                memoList.appendChild(div);
+            });
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

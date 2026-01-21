@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="auth.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>目標管理 - Level Up App</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --primary-color: #1b263b;
+            --secondary-color: #415a77;
+            --accent-color: #778da9;
+            --text-color: #0d1b2a;
+            --card-bg: #ffffff;
+            --border-color: #e0e1dd;
+            --success-color: #4caf50;
+            --delete-color: #e63946;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: relative;
+            margin-top: 2rem;
+        }
+
+        .nav-back {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .header {
+            text-align: center;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Motto Section */
+        .motto-section {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f0f4f8;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .motto-label {
+            font-size: 0.75rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .motto-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            text-align: center;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--text-color);
+            font-weight: 600;
+            outline: none;
+            border-bottom: 1px dashed transparent;
+            transition: border-color 0.2s;
+        }
+
+        .motto-input:focus {
+            border-bottom-color: var(--primary-color);
+        }
+
+        .motto-input::placeholder {
+            color: #bdc3c7;
+            font-weight: 400;
+        }
+
+        /* Goals Layout */
+        .goals-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .goal-category {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .category-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+        }
+
+        .category-badge {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            background: var(--accent-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Goal Input */
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button.add-btn {
+            padding: 0.6rem 1rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        button.add-btn:hover {
+            background-color: var(--primary-color);
+        }
+
+        /* Goal List */
+        .goal-list {
+            list-style: none;
+        }
+
+        .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
+        }
+
+        .goal-item:last-child {
+            border-bottom: none;
+        }
+
+        .goal-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .goal-text {
+            flex: 1;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            transition: color 0.2s;
+        }
+
+        .goal-item.completed .goal-text {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ddd;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: var(--delete-color);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <a class="nav-back" onclick="window.location.href='index.html'">← 戻る</a>
+
+        <div class="header">
+            <h1>GOALS</h1>
+        </div>
+
+        <!-- Motto Section -->
+        <div class="motto-section">
+            <span class="motto-label">MY MOTTO</span>
+            <input type="text" id="mottoInput" class="motto-input" placeholder="座右の銘を入力..." onchange="save()">
+        </div>
+
+        <div class="goals-grid">
+            <!-- Short Term -->
+            <div class="goal-category">
+                <div class="category-header">
+                    <span class="category-title">短期目標</span>
+                    <span class="category-badge">今週</span>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="shortInput" placeholder="今週の目標...">
+                    <button class="add-btn" onclick="addGoal('short')">追加</button>
+                </div>
+                <ul id="shortList" class="goal-list"></ul>
+            </div>
+
+            <!-- Medium Term -->
+            <div class="goal-category">
+                <div class="category-header">
+                    <span class="category-title">中期目標</span>
+                    <span class="category-badge">今月</span>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="mediumInput" placeholder="今月の目標...">
+                    <button class="add-btn" onclick="addGoal('medium')">追加</button>
+                </div>
+                <ul id="mediumList" class="goal-list"></ul>
+            </div>
+
+            <!-- Long Term -->
+            <div class="goal-category">
+                <div class="category-header">
+                    <span class="category-title">長期目標</span>
+                    <span class="category-badge">未来</span>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="longInput" placeholder="将来の目標...">
+                    <button class="add-btn" onclick="addGoal('long')">追加</button>
+                </div>
+                <ul id="longList" class="goal-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            motto: '',
+            goals: {
+                short: [], // { id, text, completed }
+                medium: [],
+                long: []
+            }
+        };
+
+        const mottoInput = document.getElementById('mottoInput');
+
+        function init() {
+            const savedState = localStorage.getItem('goalState');
+            if (savedState) {
+                state = JSON.parse(savedState);
+            }
+            mottoInput.value = state.motto || '';
+            render();
+        }
+
+        function save() {
+            state.motto = mottoInput.value;
+            localStorage.setItem('goalState', JSON.stringify(state));
+        }
+
+        function addGoal(type) {
+            const input = document.getElementById(`${type}Input`);
+            const text = input.value.trim();
+            if (text) {
+                state.goals[type].push({
+                    id: Date.now(),
+                    text: text,
+                    completed: false
+                });
+                input.value = '';
+                save();
+                render();
+            }
+        }
+
+        function toggleGoal(type, id) {
+            const goal = state.goals[type].find(g => g.id === id);
+            if (goal) {
+                goal.completed = !goal.completed;
+                save();
+                render();
+            }
+        }
+
+        function deleteGoal(type, id) {
+            state.goals[type] = state.goals[type].filter(g => g.id !== id);
+            save();
+            render();
+        }
+
+        function render() {
+            ['short', 'medium', 'long'].forEach(type => {
+                const list = document.getElementById(`${type}List`);
+                list.innerHTML = '';
+                state.goals[type].forEach(goal => {
+                    const li = document.createElement('li');
+                    li.className = `goal-item ${goal.completed ? 'completed' : ''}`;
+                    li.innerHTML = `
+                        <input type="checkbox" class="goal-checkbox" 
+                            ${goal.completed ? 'checked' : ''} 
+                            onchange="toggleGoal('${type}', ${goal.id})">
+                        <span class="goal-text">${goal.text}</span>
+                        <button class="delete-btn" onclick="deleteGoal('${type}', ${goal.id})">×</button>
+                    `;
+                    list.appendChild(li);
+                });
+            });
+        }
+
+        // Handle Enter key for inputs
+        ['short', 'medium', 'long'].forEach(type => {
+            document.getElementById(`${type}Input`).addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') addGoal(type);
+            });
+        });
+
+        init();
+    </script>
+</body>
+
+</html>
