@@ -279,19 +279,27 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            display: flex;
+            display: none;
+            /* Changed from flex to none for stability */
             justify-content: center;
             align-items: flex-end;
             /* Bottom sheet on mobile */
-            z-index: 1000;
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.2s;
+            z-index: 9999;
         }
 
         .modal-overlay.open {
-            visibility: visible;
-            opacity: 1;
+            display: flex;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .modal-content {
@@ -305,6 +313,8 @@
             gap: 1.5rem;
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            /* Ensure it sits above address bars if needed */
+            padding-bottom: max(2rem, env(safe-area-inset-bottom));
         }
 
         .modal-overlay.open .modal-content {
@@ -361,6 +371,70 @@
                 border-radius: 16px;
                 width: 90%;
             }
+        }
+
+        /* Result Modal Specifics */
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-item {
+            background: var(--bg-color);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            margin-bottom: 0.3rem;
+        }
+
+        .result-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .result-value.highlight {
+            color: var(--success-color);
+            font-size: 1.4rem;
+        }
+
+        /* History Section */
+        .history-section {
+            margin-top: 1rem;
+            max-height: 150px;
+            overflow-y: auto;
+            border-top: 2px dashed var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-date {
+            font-size: 0.75rem;
+            color: var(--accent-color);
         }
     </style>
 </head>
@@ -422,6 +496,14 @@
                 <!-- Items will go here -->
             </ul>
         </div>
+
+        <!-- History Section -->
+        <div class="history-section">
+            <div class="list-header">過去の記録</div>
+            <ul id="historyList" class="history-list">
+                <!-- History Items -->
+            </ul>
+        </div>
     </div>
 
     <!-- Input Modal -->
@@ -432,6 +514,37 @@
             <div class="modal-actions">
                 <button class="modal-btn btn-cancel" onclick="closeModal()">キャンセル</button>
                 <button class="modal-btn btn-confirm" onclick="submitDelivery()">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Summary Modal -->
+    <div id="resultModal" class="modal-overlay">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">業務終了レポート</div>
+
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-label">稼働時間</div>
+                    <div id="resDuration" class="result-value">00:00</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">配達件数</div>
+                    <div id="resCount" class="result-value">0件</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">総売上</div>
+                    <div id="resTotal" class="result-value highlight">¥0</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">時給換算</div>
+                    <div id="resHourly" class="result-value">¥0</div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn btn-confirm" style="grid-column: span 2;"
+                    onclick="closeResultModal()">お疲れ様でした！</button>
             </div>
         </div>
     </div>
@@ -459,9 +572,16 @@
         const avgPriceEl = document.getElementById('avgPrice');
         const hourlyWageEl = document.getElementById('hourlyWage');
         const sessionListEl = document.getElementById('sessionList');
+        const historyListEl = document.getElementById('historyList');
 
         const modalOverlay = document.getElementById('modalOverlay');
         const amountInput = document.getElementById('amountInput');
+
+        const resultModal = document.getElementById('resultModal');
+        const resDuration = document.getElementById('resDuration');
+        const resCount = document.getElementById('resCount');
+        const resTotal = document.getElementById('resTotal');
+        const resHourly = document.getElementById('resHourly');
 
         function init() {
             const savedState = localStorage.getItem('deliveryState');
@@ -505,25 +625,54 @@
 
             if (confirm('業務を終了してログを保存しますか？')) {
                 const endTime = Date.now();
+                const total = calculateTotal();
+                const count = state.items.length;
+
+                // Calculate stats for record
+                const diff = endTime - state.startTime;
+                const hours = diff / 3600000;
+                const hourlyRate = hours > 0 ? Math.floor(total / hours) : 0;
+
+                // Format duration text
+                const dHours = Math.floor(diff / 3600000);
+                const dMinutes = Math.floor((diff % 3600000) / 60000);
+                const durationText = `${dHours}時間${dMinutes}分`;
+
                 const sessionLog = {
                     date: new Date(state.startTime).toLocaleString(),
                     start: state.startTime,
                     end: endTime,
+                    duration: durationText, // Save formatted duration
                     items: [...state.items],
-                    total: calculateTotal(),
-                    count: state.items.length
+                    total: total,
+                    count: count,
+                    hourlyRate: hourlyRate
                 };
 
                 state.history.unshift(sessionLog);
+
+                // Show Result Modal
+                resDuration.textContent = durationText;
+                resCount.textContent = `${count}件`;
+                resTotal.textContent = `¥${total.toLocaleString()}`;
+                resHourly.textContent = `¥${hourlyRate.toLocaleString()}`;
+
+                resultModal.classList.add('open');
+
+                // Internal state reset
                 state.isWorking = false;
                 state.startTime = null;
                 state.items = [];
 
                 stopTimer();
                 save();
-                render();
-                alert('ログを保存しました。お疲れ様でした！');
+                // render() is called when modal is closed to clear the UI
             }
+        }
+
+        function closeResultModal() {
+            resultModal.classList.remove('open');
+            render(); // Clear the UI now that user has acknowledged
         }
 
         function startTimer() {
@@ -638,6 +787,31 @@
                     <span class="item-amount">¥${item.amount.toLocaleString()}</span>
                 `;
                 sessionListEl.appendChild(li);
+            });
+
+            // Render History
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyListEl.innerHTML = '';
+            state.history.forEach(log => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+
+                // Fallbacks if data missing in old logs
+                const dateStr = log.date || new Date(log.start || Date.now()).toLocaleDateString();
+                const total = log.total || 0;
+                const duration = log.duration || '??';
+
+                li.innerHTML = `
+                   <div>
+                       <div class="history-date">${dateStr}</div>
+                       <div>${duration} | ${log.count || 0}件</div>
+                   </div>
+                   <div style="font-weight: bold; color: var(--primary-color);">¥${total.toLocaleString()}</div>
+                `;
+                historyListEl.appendChild(li);
             });
         }
 
