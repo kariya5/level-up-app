@@ -50,9 +50,11 @@
             flex-direction: column;
             gap: 1.2rem;
             position: relative;
-            height: 90vh;
+            height: 100vh;
             /* Mobile friendly full height feel */
-            max-height: 800px;
+            max-height: 100vh;
+            overflow: hidden;
+            /* Main container fixed, children scroll */
         }
 
         .nav-back {
@@ -150,6 +152,8 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            flex-shrink: 0;
+            /* Prevent shrinking on small screens */
         }
 
         .delivery-btn {
@@ -218,9 +222,12 @@
         /* List Area */
         .list-section {
             flex: 1;
+            /* This takes remaining space but can shrink */
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            min-height: 150px;
+            /* Ensure at least some list is visible */
         }
 
         .list-header {
@@ -408,10 +415,14 @@
         /* History Section */
         .history-section {
             margin-top: 1rem;
-            max-height: 150px;
+            flex-shrink: 0;
+            /* Important: Do not shrink history */
+            max-height: 250px;
             overflow-y: auto;
             border-top: 2px dashed var(--border-color);
             padding-top: 1rem;
+            min-height: 150px;
+            /* Guarantee visibility */
         }
 
         .history-list {
