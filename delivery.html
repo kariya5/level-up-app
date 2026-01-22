@@ -432,6 +432,23 @@
             border-bottom: none;
         }
 
+        .history-content {
+            flex: 1;
+        }
+
+        .history-actions {
+            margin-left: 10px;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
         .history-date {
             font-size: 0.75rem;
             color: var(--accent-color);
@@ -549,6 +566,19 @@
         </div>
     </div>
 
+    <!-- Stop Confirmation Modal -->
+    <div id="stopConfirmModal" class="modal-overlay" onclick="closeStopConfirmModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">業務終了確認</div>
+            <p style="text-align: center; color: var(--text-color);">業務を終了してログを保存しますか？</p>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeStopConfirmModal()">キャンセル</button>
+                <button class="modal-btn btn-confirm" style="background-color: var(--danger-color);"
+                    onclick="confirmStopWork()">終了して保存</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let state = {
             isWorking: false,
@@ -582,6 +612,8 @@
         const resCount = document.getElementById('resCount');
         const resTotal = document.getElementById('resTotal');
         const resHourly = document.getElementById('resHourly');
+
+        const stopConfirmModal = document.getElementById('stopConfirmModal');
 
         function init() {
             const savedState = localStorage.getItem('deliveryState');
@@ -622,52 +654,61 @@
 
         function stopWork() {
             if (!state.isWorking) return;
+            // Open custom modal instead of window.confirm
+            stopConfirmModal.classList.add('open');
+        }
 
-            if (confirm('業務を終了してログを保存しますか？')) {
-                const endTime = Date.now();
-                const total = calculateTotal();
-                const count = state.items.length;
+        function closeStopConfirmModal(e) {
+            if (e && e.target !== stopConfirmModal && e.target.tagName !== 'BUTTON') return;
+            stopConfirmModal.classList.remove('open');
+        }
 
-                // Calculate stats for record
-                const diff = endTime - state.startTime;
-                const hours = diff / 3600000;
-                const hourlyRate = hours > 0 ? Math.floor(total / hours) : 0;
+        function confirmStopWork() {
+            closeStopConfirmModal();
 
-                // Format duration text
-                const dHours = Math.floor(diff / 3600000);
-                const dMinutes = Math.floor((diff % 3600000) / 60000);
-                const durationText = `${dHours}時間${dMinutes}分`;
+            const endTime = Date.now();
+            const total = calculateTotal();
+            const count = state.items.length;
 
-                const sessionLog = {
-                    date: new Date(state.startTime).toLocaleString(),
-                    start: state.startTime,
-                    end: endTime,
-                    duration: durationText, // Save formatted duration
-                    items: [...state.items],
-                    total: total,
-                    count: count,
-                    hourlyRate: hourlyRate
-                };
+            // Calculate stats for record
+            const diff = endTime - state.startTime;
+            const hours = diff / 3600000;
+            const hourlyRate = hours > 0 ? Math.floor(total / hours) : 0;
 
-                state.history.unshift(sessionLog);
+            // Format duration text
+            const dHours = Math.floor(diff / 3600000);
+            const dMinutes = Math.floor((diff % 3600000) / 60000);
+            const durationText = `${dHours}時間${dMinutes}分`;
 
-                // Show Result Modal
-                resDuration.textContent = durationText;
-                resCount.textContent = `${count}件`;
-                resTotal.textContent = `¥${total.toLocaleString()}`;
-                resHourly.textContent = `¥${hourlyRate.toLocaleString()}`;
+            const sessionLog = {
+                date: new Date(state.startTime).toLocaleString(),
+                start: state.startTime,
+                end: endTime,
+                duration: durationText, // Save formatted duration
+                items: [...state.items],
+                total: total,
+                count: count,
+                hourlyRate: hourlyRate
+            };
 
-                resultModal.classList.add('open');
+            state.history.unshift(sessionLog);
 
-                // Internal state reset
-                state.isWorking = false;
-                state.startTime = null;
-                state.items = [];
+            // Show Result Modal
+            resDuration.textContent = durationText;
+            resCount.textContent = `${count}件`;
+            resTotal.textContent = `¥${total.toLocaleString()}`;
+            resHourly.textContent = `¥${hourlyRate.toLocaleString()}`;
 
-                stopTimer();
-                save();
-                // render() is called when modal is closed to clear the UI
-            }
+            resultModal.classList.add('open');
+
+            // Internal state reset
+            state.isWorking = false;
+            state.startTime = null;
+            state.items = [];
+
+            stopTimer();
+            save();
+            render(); // Will update UI to 'Not Working' state
         }
 
         function closeResultModal() {
@@ -795,7 +836,7 @@
 
         function renderHistory() {
             historyListEl.innerHTML = '';
-            state.history.forEach(log => {
+            state.history.forEach((log, index) => {
                 const li = document.createElement('li');
                 li.className = 'history-item';
 
@@ -805,14 +846,25 @@
                 const duration = log.duration || '??';
 
                 li.innerHTML = `
-                   <div>
+                   <div class="history-content">
                        <div class="history-date">${dateStr}</div>
                        <div>${duration} | ${log.count || 0}件</div>
                    </div>
                    <div style="font-weight: bold; color: var(--primary-color);">¥${total.toLocaleString()}</div>
+                   <div class="history-actions">
+                       <button class="btn-delete" onclick="deleteHistoryItem(${index})">🗑️</button>
+                   </div>
                 `;
                 historyListEl.appendChild(li);
             });
+        }
+
+        function deleteHistoryItem(index) {
+            if (confirm('この記録を削除してもよろしいですか？')) {
+                state.history.splice(index, 1);
+                save();
+                renderHistory();
+            }
         }
 
         // Enter key in input
